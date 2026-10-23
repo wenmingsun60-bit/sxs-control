@@ -1,12 +1,14 @@
 # SXS Control
 
-[English](README.en.md) · [工具清单](docs/TOOLS.md) · [来源与许可证](docs/PROVENANCE.md) · [贡献指南](CONTRIBUTING.md)
+[English](README.en.md) · [首次运行与排错](docs/QUICKSTART.md) · [工具清单](docs/TOOLS.md) · [来源与许可证](docs/PROVENANCE.md) · [贡献指南](CONTRIBUTING.md)
 
 面向本地 AI 客户端的 Windows 自动化工具集。通过 MCP stdio、命令行或可选的本机 HTTP 接口，访问截图、鼠标键盘、文件、进程、注册表和窗口辅助功能树。
 
 **本机执行，无需 SXS 账号、云端网关、设备轮询或云端兜底。**访问网页只发生在明确调用网页抓取工具时。项目不包含模型，需要配合能调用本地工具的 AI 客户端。
 
-当前版本 **0.1.0 / Alpha**。保留早期 SXS 本地版的 **39 个工具名称**，其中截图、点击和滚动包含兼容别名。开源版重新编写了适配代码，没有打包早期私有版本的云端实现和配置。部分参数校验比旧版本严格，见[迁移说明](docs/MIGRATION.md)。
+当前源码版本 **0.1.1 / Alpha**。保留早期 SXS 本地版的 **39 个工具名称**，其中截图、点击和滚动包含兼容别名。开源版重新编写了适配代码，没有打包早期私有版本的云端实现和配置。部分参数校验比旧版本严格，见[迁移说明](docs/MIGRATION.md)。
+
+0.1.1 修复了目录复制时对嵌套源路径和实际目标路径检查不完整的问题，并增加链接、循环路径和正常合并复制的回归测试。变更见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 安装
 

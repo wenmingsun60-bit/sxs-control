@@ -31,6 +31,122 @@ class CoreTests(unittest.TestCase):
     def call(self, name, arguments=None):
         return self.server.call(name, arguments or {})
 
+    def directory_link(self, link, target):
+        if os.name == "nt":
+            # Junctions exercise directory redirection without Developer Mode.
+            process = subprocess.run(["cmd.exe", "/d", "/c", "mklink", "/J", str(link), str(target)],
+                                     capture_output=True, timeout=10)
+            if process.returncode:
+                self.skipTest("directory junction creation is unavailable")
+        else:
+            link.symlink_to(target, target_is_directory=True)
+
+    def file_link(self, link, target):
+        try:
+            link.symlink_to(target)
+        except (OSError, NotImplementedError):
+            self.skipTest("file symlink creation is unavailable")
+
+    def test_directory_copy_rejects_destination_directory_link_escape(self):
+        source = self.allowed / "source"
+        (source / "nested").mkdir(parents=True)
+        (source / "ordinary.txt").write_text("new", encoding="utf-8")
+        (source / "nested" / "sample.txt").write_text("new", encoding="utf-8")
+        target = self.allowed / "destination"
+        target.mkdir()
+        (target / "ordinary.txt").write_text("original", encoding="utf-8")
+        outside = self.root / "outside"
+        outside.mkdir()
+        (outside / "sample.txt").write_text("original", encoding="utf-8")
+        self.directory_link(target / "nested", outside)
+        result = self.call("windows_copy_file", {"source": str(source), "destination": str(target), "overwrite": True})
+        self.assertTrue(result["isError"])
+        self.assertEqual((outside / "sample.txt").read_text(encoding="utf-8"), "original")
+        self.assertEqual((target / "ordinary.txt").read_text(encoding="utf-8"), "original")
+
+    def test_directory_copy_rejects_destination_file_link_escape(self):
+        source = self.allowed / "source"
+        source.mkdir()
+        (source / "sample.txt").write_text("new", encoding="utf-8")
+        target = self.allowed / "destination"
+        target.mkdir()
+        outside = self.root / "outside.txt"
+        outside.write_text("original", encoding="utf-8")
+        self.file_link(target / "sample.txt", outside)
+        result = self.call("windows_copy_file", {"source": str(source), "destination": str(target), "overwrite": True})
+        self.assertTrue(result["isError"])
+        self.assertEqual(outside.read_text(encoding="utf-8"), "original")
+
+    def test_file_copy_into_directory_checks_effective_destination(self):
+        source = self.allowed / "sample.txt"
+        source.write_text("new", encoding="utf-8")
+        target = self.allowed / "destination"
+        target.mkdir()
+        outside = self.root / "outside.txt"
+        outside.write_text("original", encoding="utf-8")
+        self.file_link(target / source.name, outside)
+        result = self.call("windows_copy_file", {"source": str(source), "destination": str(target), "overwrite": True})
+        self.assertTrue(result["isError"])
+        self.assertEqual(outside.read_text(encoding="utf-8"), "original")
+
+    def test_directory_copy_checks_files_beneath_source_directory_links(self):
+        source = self.allowed / "source"
+        source.mkdir()
+        shared = self.allowed / "shared"
+        shared.mkdir()
+        outside = self.root / "outside.txt"
+        outside.write_text("outside", encoding="utf-8")
+        self.file_link(shared / "sample.txt", outside)
+        self.directory_link(source / "linked", shared)
+        target = self.allowed / "destination"
+        result = self.call("windows_copy_file", {"source": str(source), "destination": str(target)})
+        self.assertTrue(result["isError"])
+        self.assertFalse(target.exists())
+
+    def test_directory_copy_merges_regular_destination(self):
+        source = self.allowed / "source"
+        (source / "nested").mkdir(parents=True)
+        (source / "nested" / "sample.txt").write_text("孙小圣 SXS", encoding="utf-8")
+        target = self.allowed / "destination"
+        (target / "nested").mkdir(parents=True)
+        (target / "nested" / "keep.txt").write_text("keep", encoding="utf-8")
+        result = self.call("windows_copy_file", {"source": str(source), "destination": str(target), "overwrite": True})
+        self.assertFalse(result["isError"], result)
+        self.assertEqual((target / "nested" / "sample.txt").read_text(encoding="utf-8"), "孙小圣 SXS")
+        self.assertEqual((target / "nested" / "keep.txt").read_text(encoding="utf-8"), "keep")
+
+    def test_directory_copy_preserves_allowed_source_link_workflow(self):
+        source = self.allowed / "source"
+        source.mkdir()
+        shared = self.allowed / "shared"
+        shared.mkdir()
+        (shared / "sample.txt").write_text("allowed", encoding="utf-8")
+        self.directory_link(source / "linked", shared)
+        target = self.allowed / "destination"
+        result = self.call("windows_copy_file", {"source": str(source), "destination": str(target)})
+        self.assertFalse(result["isError"], result)
+        self.assertEqual((target / "linked" / "sample.txt").read_text(encoding="utf-8"), "allowed")
+
+    def test_directory_copy_rejects_source_link_cycles_before_writing(self):
+        source = self.allowed / "source"
+        source.mkdir()
+        self.directory_link(source / "loop", source)
+        target = self.allowed / "destination"
+        result = self.call("windows_copy_file", {"source": str(source), "destination": str(target)})
+        self.assertTrue(result["isError"])
+        self.assertFalse(target.exists())
+
+    def test_directory_copy_rejects_destination_inside_linked_source(self):
+        source = self.allowed / "source"
+        source.mkdir()
+        shared = self.allowed / "shared"
+        shared.mkdir()
+        self.directory_link(source / "linked", shared)
+        target = shared / "destination"
+        result = self.call("windows_copy_file", {"source": str(source), "destination": str(target)})
+        self.assertTrue(result["isError"])
+        self.assertFalse(target.exists())
+
     def test_legacy_tool_names_preserved(self):
         expected = set((Path(__file__).parent / "legacy_tools.txt").read_text().splitlines())
         names = [tool["name"] for tool in TOOLS]
