@@ -19,6 +19,10 @@ from sxs_control.server import Server, make_http_server, serve_stdio
 
 
 class CoreTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls._link_unavailable = {}
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
@@ -31,30 +35,38 @@ class CoreTests(unittest.TestCase):
     def call(self, name, arguments=None):
         return self.server.call(name, arguments or {})
 
+    def skip_unavailable_link(self, kind, reason=None):
+        if reason is not None:
+            type(self)._link_unavailable[kind] = reason
+        if kind in type(self)._link_unavailable:
+            self.skipTest(type(self)._link_unavailable[kind])
+
     def directory_link(self, link, target):
         if os.name == "nt":
+            self.skip_unavailable_link("directory")
             # Junctions exercise directory redirection without Developer Mode.
             try:
                 process = subprocess.run(["cmd.exe", "/d", "/c", "mklink", "/J", str(link), str(target)],
                                          capture_output=True, timeout=5)
             except subprocess.TimeoutExpired:
-                self.skipTest("directory junction creation timed out after 5 seconds")
+                self.skip_unavailable_link("directory", "directory junction creation timed out after 5 seconds")
             if process.returncode:
-                self.skipTest("directory junction creation is unavailable")
+                self.skip_unavailable_link("directory", "directory junction creation is unavailable")
         else:
             link.symlink_to(target, target_is_directory=True)
 
     def file_link(self, link, target):
         if os.name == "nt":
+            self.skip_unavailable_link("file")
             # Some hosts stall in CreateSymbolicLink; bound fixture creation.
             try:
                 process = subprocess.run([sys.executable, "-c",
                                           "import os, sys; os.symlink(sys.argv[1], sys.argv[2])",
                                           str(target), str(link)], capture_output=True, timeout=5)
             except subprocess.TimeoutExpired:
-                self.skipTest("file symlink creation timed out after 5 seconds")
+                self.skip_unavailable_link("file", "file symlink creation timed out after 5 seconds")
             if process.returncode:
-                self.skipTest("file symlink creation is unavailable")
+                self.skip_unavailable_link("file", "file symlink creation is unavailable")
             return
         try:
             link.symlink_to(target)
