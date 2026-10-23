@@ -8,5 +8,5 @@ Desktop accessibility labels can change after a UI update. Refresh a snapshot be
 
 For a security-sensitive finding, contact the maintainer through the GitHub profile or repository private reporting if it is enabled. Do not assume private reporting is enabled. Do not post working credentials or sensitive exploit details in a public issue. Non-sensitive defects may be reported as ordinary GitHub issues.
 
-Version 0.1.0 is an alpha release. No formal security audit, code signing or guaranteed support period is claimed.
+The 0.1.x series is alpha software. No formal security audit, code signing or guaranteed support period is claimed.
 

@@ -34,14 +34,28 @@ class CoreTests(unittest.TestCase):
     def directory_link(self, link, target):
         if os.name == "nt":
             # Junctions exercise directory redirection without Developer Mode.
-            process = subprocess.run(["cmd.exe", "/d", "/c", "mklink", "/J", str(link), str(target)],
-                                     capture_output=True, timeout=10)
+            try:
+                process = subprocess.run(["cmd.exe", "/d", "/c", "mklink", "/J", str(link), str(target)],
+                                         capture_output=True, timeout=5)
+            except subprocess.TimeoutExpired:
+                self.skipTest("directory junction creation timed out after 5 seconds")
             if process.returncode:
                 self.skipTest("directory junction creation is unavailable")
         else:
             link.symlink_to(target, target_is_directory=True)
 
     def file_link(self, link, target):
+        if os.name == "nt":
+            # Some hosts stall in CreateSymbolicLink; bound fixture creation.
+            try:
+                process = subprocess.run([sys.executable, "-c",
+                                          "import os, sys; os.symlink(sys.argv[1], sys.argv[2])",
+                                          str(target), str(link)], capture_output=True, timeout=5)
+            except subprocess.TimeoutExpired:
+                self.skipTest("file symlink creation timed out after 5 seconds")
+            if process.returncode:
+                self.skipTest("file symlink creation is unavailable")
+            return
         try:
             link.symlink_to(target)
         except (OSError, NotImplementedError):
@@ -221,10 +235,7 @@ class CoreTests(unittest.TestCase):
         with self.assertRaises(PermissionError):
             checked_path(str(self.allowed / ".." / "outside.txt"), self.cfg)
         link = self.allowed / "link"
-        try:
-            link.symlink_to(self.root, target_is_directory=True)
-        except (OSError, NotImplementedError):
-            return
+        self.directory_link(link, self.root)
         with self.assertRaises(PermissionError):
             checked_path(str(link / "outside.txt"), self.cfg)
 
