@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sxs-control"
+version = "0.1.0"
+description = "Local Windows automation tools for MCP clients and command-line agents"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE", "LICENSES/*"]
+authors = [{ name = "Sun Wenming (孙文明)" }]
+keywords = ["mcp", "windows", "automation", "local-first"]
+classifiers = ["Development Status :: 3 - Alpha", "Operating System :: Microsoft :: Windows", "Programming Language :: Python :: 3"]
+dependencies = [
+  "Pillow>=11.2,<14; sys_platform == 'win32'",
+  "psutil>=7,<8; sys_platform == 'win32'",
+  "pywin32>=311,<313; sys_platform == 'win32'",
+  "uiautomation>=2.0.29,<3; sys_platform == 'win32'",
+]
+
+[project.scripts]
+sxs-control = "sxs_control.cli:main"
+
+[project.urls]
+Repository = "https://github.com/wenmingsun60-bit/sxs-control"
+Issues = "https://github.com/wenmingsun60-bit/sxs-control/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+

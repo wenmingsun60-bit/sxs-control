@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "sxs-control": {
+      "command": "C:\\path\\to\\sxs-control\\.venv\\Scripts\\python.exe",
+      "args": ["-X", "utf8", "-m", "sxs_control", "--stdio"]
+    }
+  }
+}
+
