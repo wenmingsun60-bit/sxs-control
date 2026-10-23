@@ -1,8 +1,10 @@
 # SXS Control
 
-[简体中文](README.md) · [Provenance](docs/PROVENANCE.md) · [Tool reference](docs/TOOLS.md)
+[简体中文](README.md) · [Provenance](docs/PROVENANCE.md) · [Tool reference](docs/TOOLS.md) · [Validation](docs/VALIDATION.md)
 
-Local Windows automation for AI clients: 39 MCP tool names covering screenshots, mouse and keyboard, files, processes, registry, windows and accessibility trees. Some names are compatibility aliases. Version 0.1.0 is an alpha release.
+Local Windows automation for AI clients: 39 MCP tool names covering screenshots, mouse and keyboard, files, processes, registry, windows and accessibility trees. Some names are compatibility aliases. The current source version is 0.1.1 (alpha).
+
+0.1.1 checks nested source paths and effective destination paths before copying a directory, including paths redirected by links. Regression coverage includes rejected escapes, cycles, and successful ordinary copies. See [CHANGELOG.md](CHANGELOG.md).
 
 Run through MCP stdio, the CLI, or opt-in loopback HTTP. No SXS account, cloud gateway, polling, telemetry or cloud fallback is built in. The URL-fetching tool makes network requests only when called. This project does not include an AI model.
 

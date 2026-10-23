@@ -16,6 +16,26 @@ def info(path) -> dict:
             "modified": int(stat.st_mtime)}
 
 
+def check_directory_copy(source, target, cfg):
+    """Preflight the paths copytree follows, including redirected destinations."""
+    def visit(current, destination, ancestors):
+        current = checked_path(str(current), cfg)
+        checked_path(str(destination), cfg)
+        if current in ancestors:
+            raise ValueError("source contains a directory link cycle")
+        if current == target or current in target.parents:
+            raise ValueError("destination cannot be inside source, including linked directories")
+        with os.scandir(current) as entries:
+            for entry in entries:
+                child = checked_path(entry.path, cfg)
+                child_target = destination / entry.name
+                checked_path(str(child_target), cfg)
+                if entry.is_dir(follow_symlinks=True):
+                    visit(child, child_target, ancestors + (current,))
+
+    visit(source, target, ())
+
+
 def run(action: str, cfg: dict, args: dict) -> dict:
     if action == "file_copy" or action == "file_move":
         source = checked_path(args["source"], cfg)
@@ -28,8 +48,13 @@ def run(action: str, cfg: dict, args: dict) -> dict:
             raise FileNotFoundError(str(source))
         if target.exists() and not args.get("overwrite", False):
             raise FileExistsError(str(target))
-        # Traverse the source before a recursive copy: nested links cannot escape roots.
-        if source.is_dir():
+        if action == "file_copy":
+            if source.is_dir():
+                check_directory_copy(source, target, cfg)
+            else:
+                # copy2 appends the source name when the destination is a directory.
+                checked_path(str(target / source.name if target.is_dir() else target), cfg)
+        elif source.is_dir():
             for directory, names, filenames in os.walk(source):
                 for name in names + filenames:
                     checked_path(str(source.__class__(directory) / name), cfg)
