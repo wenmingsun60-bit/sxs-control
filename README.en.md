@@ -52,7 +52,8 @@ The environment check passes when `doctor` reports `ok: true`, `tool_count: 39`,
 ### 2. Try a computer status query
 
 ```powershell
-'{}' | .\.venv\Scripts\python.exe -X utf8 -m sxs_control call windows_device_status --args-stdin
+$sxsPython = ".\.venv\Scripts\python.exe"
+'{}' | & $sxsPython -X utf8 -m sxs_control call windows_device_status --args-stdin
 ```
 
 An outer result of `isError: false` confirms the call succeeded. This first call only reads status.

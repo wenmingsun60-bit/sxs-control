@@ -52,7 +52,8 @@ py -3 -m venv .venv
 ### 2. 试一次电脑状态查询
 
 ```powershell
-'{}' | .\.venv\Scripts\python.exe -X utf8 -m sxs_control call windows_device_status --args-stdin
+$sxsPython = ".\.venv\Scripts\python.exe"
+'{}' | & $sxsPython -X utf8 -m sxs_control call windows_device_status --args-stdin
 ```
 
 结果中的 `isError: false` 表示调用成功。这一步只查询状态，方便你先确认工具能够运行。

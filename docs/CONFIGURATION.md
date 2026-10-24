@@ -25,8 +25,9 @@ Windows 默认配置位于 `%LOCALAPPDATA%\SXSControl\config.json`。首次运�
 在仓库根目录的 PowerShell 中执行：
 
 ```powershell
-'{}' | .\.venv\Scripts\python.exe -X utf8 -m sxs_control call windows_device_status --args-stdin
-.\.venv\Scripts\python.exe -m sxs_control list
+$sxsPython = ".\.venv\Scripts\python.exe"
+'{}' | & $sxsPython -X utf8 -m sxs_control call windows_device_status --args-stdin
+& $sxsPython -m sxs_control list
 ```
 
 `--args-stdin` 从标准输入读取 JSON，减少 PowerShell 原生命令参数中的引号问题。复杂或含中文的参数可写入 UTF-8 JSON 文件，再通过 `--arguments-file args.json` 读取。`scripts/sxs-local.ps1` 提供命令行辅助入口。
