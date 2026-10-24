@@ -96,6 +96,6 @@ py -3 -m venv .venv
 
 ## 致谢与许可
 
-由 **孙文明（Sun Wenming）**维护。早期工作流使用过 [Windows-MCP](https://github.com/CursorTouch/Windows-MCP)，并参考过 [Desktop Commander](https://github.com/wonderwhy-er/DesktopCommanderMCP) 的工具组织，感谢上游作者。
+由孙文明（Sun Wenming）维护。早期工作流使用过 [Windows-MCP](https://github.com/CursorTouch/Windows-MCP)，并参考过 [Desktop Commander](https://github.com/wonderwhy-er/DesktopCommanderMCP) 的工具组织，感谢上游作者。
 
 本仓库新增代码采用 [MIT 许可](LICENSE)，外部依赖保留各自许可证。代码来源和许可范围见[来源说明](docs/PROVENANCE.md)与[第三方声明](THIRD_PARTY_NOTICES.md)。
