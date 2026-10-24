@@ -1,16 +1,42 @@
-# SXS Control
+<h1 align="center">SXS Control</h1>
 
-[简体中文](README.md) · [Provenance](docs/PROVENANCE.md) · [Tool reference](docs/TOOLS.md) · [Validation](docs/VALIDATION.md)
+<p align="center"><strong>Let your AI assistant work on your Windows PC</strong></p>
+<p align="center">See the screen · Use apps · Organize files</p>
 
-Local Windows automation for AI clients: 39 MCP tool names covering screenshots, mouse and keyboard, files, processes, registry, windows and accessibility trees. Some names are compatibility aliases. The current source version is 0.1.1 (alpha).
+<p align="center">
+  <a href="#get-started">Get started</a> ·
+  <a href="docs/TOOLS.md">Tool reference</a> ·
+  <a href="docs/VALIDATION.md">Validation</a> ·
+  <a href="README.md">简体中文</a>
+</p>
 
-0.1.1 checks nested source paths and effective destination paths before copying a directory, including paths redirected by links. Regression coverage includes rejected escapes, cycles, and successful ordinary copies. See [CHANGELOG.md](CHANGELOG.md).
+<p align="center">
+  <a href="https://github.com/wenmingsun60-bit/sxs-control/actions/workflows/ci.yml"><img src="https://github.com/wenmingsun60-bit/sxs-control/actions/workflows/ci.yml/badge.svg?branch=main" alt="Automated checks status"></a>
+  &nbsp; Runs locally · <a href="LICENSE">MIT license</a> · 0.1.1 Alpha
+</p>
 
-Run through MCP stdio, the CLI, or opt-in loopback HTTP. No SXS account, cloud gateway, polling, telemetry or cloud fallback is built in. The URL-fetching tool makes network requests only when called. This project does not include an AI model.
+SXS Control gives AI assistants access to screenshots, mouse and keyboard actions, and local files. **Your AI client interprets the request; SXS Control performs the operation on the current computer.** The client must support local tool execution.
 
-## Install
+Computer operations run locally. Your chosen AI client determines whether its model uses the network and what content it receives.
 
-Windows 10/11, an interactive desktop, Python 3.10+. Source installation only; no PyPI release is claimed.
+## What you can do
+
+| Your task | Available capabilities |
+| --- | --- |
+| Inspect the current screen | Capture screenshots and read windows and accessible controls. |
+| Work with desktop apps | Click, type, scroll, use keyboard shortcuts, and interact with accessible controls. |
+| Organize local files | Search, read, write, copy, move, and delete within configured file roots. |
+| Diagnose system state | Inspect processes, run PowerShell, and read or modify the registry when needed. |
+
+There are **39 tool entries**, including compatibility aliases. See the [tool reference](docs/TOOLS.md) for parameters.
+
+## Get started
+
+You need **Windows 10/11, Python 3.10 or later, and Git**. Desktop actions require an interactive desktop. Installation is currently from source.
+
+### 1. Install and check the environment
+
+Run in PowerShell:
 
 ```powershell
 git clone https://github.com/wenmingsun60-bit/sxs-control.git
@@ -21,32 +47,54 @@ py -3 -m venv .venv
 .\.venv\Scripts\python.exe -m sxs_control doctor
 ```
 
-Configure an MCP client to launch the virtual environment's Python with arguments `-X utf8 -m sxs_control --stdio`. See `examples/mcp-stdio.json`. A cloud-only connector cannot reach your computer's localhost. A client such as Grok must offer local execution to use the CLI; official Grok integration is not claimed.
+The environment check passes when `doctor` reports `ok: true`, `tool_count: 39`, and a version for each dependency. Skip `init` if you already have a configuration.
+
+### 2. Try a computer status query
 
 ```powershell
-'{}' | .\.venv\Scripts\python.exe -X utf8 -m sxs_control call windows_device_status --args-stdin
+$sxsPython = ".\.venv\Scripts\python.exe"
+'{}' | & $sxsPython -X utf8 -m sxs_control call windows_device_status --args-stdin
 ```
 
-The default configuration is `%LOCALAPPDATA%\SXSControl\config.json`, with `~/SXSWorkspace` as the only allowed file root. Override the config location with `SXS_CONTROL_CONFIG` or `--config`. File-root checks are not a sandbox for PowerShell, launched programs, registry or desktop input. These tools act with the current Windows user's permissions.
+An outer result of `isError: false` confirms the call succeeded. This first call only reads status.
 
-## Optional local HTTP
+### 3. Connect your AI assistant
 
-`sxs-control http --port 18790` binds only to `127.0.0.1`. Every request requires `X-SXS-Local: 1`. JSON POST endpoints are `/call` and `/mcp`; GET endpoints are `/health` and `/tools`. Host checking, browser-Origin rejection and no CORS prevent ordinary cross-site browser calls. The fixed header is not authentication against other local processes. No SSE, persistent sessions, remote authorization or automatic startup is provided.
+Use a client that can launch a local tool process, usually through **MCP stdio**. Add the configuration below and replace `command` with the absolute path to the Python executable in your virtual environment:
 
-## Development
-
-```text
-python -m pip install -e .
-python -m unittest discover -s tests -v
-python scripts/check_release.py
-python scripts/windows_smoke.py
+```json
+{
+  "mcpServers": {
+    "sxs-control": {
+      "command": "C:\\path\\to\\sxs-control\\.venv\\Scripts\\python.exe",
+      "args": ["-X", "utf8", "-m", "sxs_control", "--stdio"]
+    }
+  }
+}
 ```
 
-The Windows smoke test reads local system/UI metadata and exercises file operations only inside a temporary directory. It does not click, type, replace clipboard content or modify existing files or registry entries. See the validation report for exact coverage and limitations.
+A client that only accepts a cloud MCP URL cannot directly connect to this local version. CLI usage, configuration, and opt-in loopback HTTP are documented in [Configuration and connections](docs/CONFIGURATION.md#english-reference).
 
-## Attribution
+## Workspace and permissions
 
-Maintained by Sun Wenming. Earlier SXS workflows used Windows-MCP and drew on Desktop Commander workflows. The public adapter is newly organized and does not ship the private prototype scripts or their cloud deployment code. Known upstream notices are retained in `LICENSES/`; runtime dependencies keep their own licenses. See `THIRD_PARTY_NOTICES.md` and `docs/PROVENANCE.md`.
+Initialization creates `~/SXSWorkspace`. File tools are restricted to this directory by default; configure `allowed_roots` to change it.
 
-MIT for the new SXS source. No affiliation with OpenAI, xAI, Microsoft or the referenced upstream projects is implied.
+**Tools run with the current Windows user's permissions.** File-root checks apply to file tools. PowerShell, desktop input, app launches, and registry operations can affect other parts of the computer. Connect trusted clients and keep client-side approval for operations with side effects.
 
+## Project status and contributions
+
+The source version is **0.1.1 Alpha** and is still evolving. The automated suite contains 23 tests. See [validation coverage](docs/VALIDATION.md) for native-PC results, desktop limitations, and client compatibility limits.
+
+| What you need | Where to go |
+| --- | --- |
+| Version changes | [Changelog](CHANGELOG.md) |
+| Migration from the earlier local version | [Migration guide](docs/MIGRATION.md) |
+| Report a problem or suggest a change | [Open an issue](https://github.com/wenmingsun60-bit/sxs-control/issues/new/choose) |
+| Develop, test, or contribute code | [Contributing](CONTRIBUTING.md) |
+| Understand permission boundaries | [Security](SECURITY.md) |
+
+## Credits and license
+
+Maintained by **Sun Wenming**. Earlier workflows used [Windows-MCP](https://github.com/CursorTouch/Windows-MCP) and drew on [Desktop Commander](https://github.com/wonderwhy-er/DesktopCommanderMCP). Thanks to their authors.
+
+New SXS source is [MIT licensed](LICENSE). Dependencies retain their own licenses. See [provenance](docs/PROVENANCE.md) and [third-party notices](THIRD_PARTY_NOTICES.md) for scope and attribution.
